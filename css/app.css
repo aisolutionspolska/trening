@@ -119,3 +119,21 @@ svg{flex:none}
 .chart{display:block;width:100%;height:auto}
 video.scan{width:100%;aspect-ratio:4/3;background:#000;object-fit:cover}
 @media (prefers-reduced-motion:no-preference){ .sheet{animation:up .18s ease-out} @keyframes up{from{transform:translateY(24px);opacity:.6}} }
+
+/* siatka mikrocyklu (jak na kartce) */
+.gweek{display:flex;flex-direction:column;gap:10px}
+.gday{display:flex;flex-direction:column;gap:0;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);padding:12px 14px;font-size:14px}
+.gday.nx{border-color:var(--line2);border-width:2px;padding:11px 13px}
+.ghead{min-height:28px;margin-bottom:6px}
+.ghead b{display:inline-block;min-width:52px;margin-right:6px;font-weight:650;font-stretch:120%}
+.ghead span:first-child{font-size:16px;font-weight:600}
+.grow{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:28px;border-top:1px solid var(--line)}
+.grow > span:first-child{color:var(--ink);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.gsq{display:inline-flex;gap:4px;flex:none}
+.gsq i{width:14px;height:14px;border:1.5px solid var(--ink);display:block}
+.gsq i.f{background:var(--ink)}
+.gsq i.x{border-style:dashed}
+.pill{font-size:11px;font-weight:650;letter-spacing:.12em;text-transform:uppercase;font-stretch:115%;background:var(--inv-bg);color:var(--inv-ink);padding:4px 8px}
+.toast{display:flex;align-items:center;gap:16px;justify-content:space-between;min-width:260px}
+.toast button{background:none;border:0;color:inherit;font-weight:650;font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:6px 0}
+.chip{border:0;cursor:pointer;color:inherit}

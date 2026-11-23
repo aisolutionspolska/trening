@@ -100,14 +100,14 @@ export const COND_VARIANTS = {
 
 // Tydzień docelowy (od tygodnia 3).
 const WEEK = {
-  pon: { title: 'Dół · siła', type: 'strength', intensity: 3, minutes: 70, items: [
+  pon: { title: 'Dół · siła', type: 'strength', intensity: 3, minutes: 70, legs: true, items: [
     I('skok_dal', 3, 4, 90), I('wykrok_wst', 4, 6, 150, { main: true }), I('hip_thrust', 4, 6, 150, { main: true }),
     I('stepup', 3, 10, 90), I('nordic', 2, 5, 120), I('wspiecia_jn', 3, 12, 60), I('unoszenie_kolan', 3, 12, 60), I('deadbug', 3, 10, 45) ] },
   wt: { title: 'Góra · siła', type: 'strength', intensity: 3, minutes: 90, cond: '4x4', items: [
     I('bench', 4, 5, 180, { main: true }), I('pullup_w', 4, 5, 180, { main: true }), I('row_incl', 3, 8, 120),
     I('ohp_seated', 3, 8, 120), I('iso_bark', 3, 6, 60) ] },
   sr: { title: 'Tlen i mobilność', type: 'light', intensity: 1, minutes: 45, checklist: CHK_SR },
-  czw: { title: 'Dół · objętość', type: 'strength', intensity: 2, minutes: 70, items: [
+  czw: { title: 'Dół · objętość', type: 'strength', intensity: 2, minutes: 70, legs: true, items: [
     I('wykroki_chodz', 3, 10, 120, { main: true }), I('wykrok_def', 3, 8, 120), I('wykrok_bok', 3, 8, 90), I('hip_thrust_jn', 3, 10, 90),
     I('slizgi', 3, 10, 90), I('reverse_nordic', 2, 6, 90), I('copenhagen', 3, 20, 60), I('zgiecie_biodra', 2, 12, 45),
     I('wspiecia_siedz', 3, 15, 60), I('pallof', 3, 10, 45) ] },
@@ -148,20 +148,36 @@ export function phaseFor(week) {
   return { id: 'przedsezon', name: 'Przedsezon', note: '' };
 }
 
-// Zwraca plan dnia dla danego tygodnia, z uwzględnieniem fazy i zamian ćwiczeń.
-export function dayPlan(week, dayKey, swaps = {}) {
+export const variantOf = week => (week <= 2 ? 'r' : 'w');
+
+// Plan bazowy dnia (bez korekt fazy) – z edycjami użytkownika, jeśli są.
+export function baseItems(week, dayKey, cfg = {}) {
+  const v = variantOf(week);
+  const base = v === 'r' ? RETURN[dayKey] : WEEK[dayKey];
+  if (!base.items) return null;
+  const ed = cfg.edits?.[`${v}:${dayKey}`];
+  if (ed) return JSON.parse(JSON.stringify(ed)).filter(it => EX[it.ex]);
+  return base.items.map((it, idx) => {
+    const sw = cfg.swaps?.[`${v}:${dayKey}:${idx}`];
+    return { ...it, ex: sw && EX[sw] ? sw : it.ex };
+  });
+}
+export const defaultItems = (week, dayKey) => JSON.parse(JSON.stringify((variantOf(week) === 'r' ? RETURN : WEEK)[dayKey].items || []));
+
+// Zwraca plan dnia dla danego tygodnia, z edycjami i korektą fazy.
+export function dayPlan(week, dayKey, cfg = {}) {
   const ph = phaseFor(week);
-  const base = ph.id === 'powrot' ? RETURN[dayKey] : WEEK[dayKey];
-  const d = JSON.parse(JSON.stringify(base));
-  d.key = dayKey; d.phase = ph;
-  if (d.items) {
-    d.items = d.items.map((it, idx) => {
-      const sw = swaps[`${ph.id === 'powrot' ? 'r' : 'w'}:${dayKey}:${idx}`];
-      if (sw && EX[sw]) it.ex = sw;
+  const v = variantOf(week);
+  const base = v === 'r' ? RETURN[dayKey] : WEEK[dayKey];
+  const d = JSON.parse(JSON.stringify({ ...base, items: undefined }));
+  d.key = dayKey; d.phase = ph; d.variant = v; d.edited = !!cfg.edits?.[`${v}:${dayKey}`];
+  const items = baseItems(week, dayKey, cfg);
+  if (items) {
+    d.items = items.map((it, idx) => {
       if (ph.id === 'deload') it.sets = Math.max(1, Math.round(it.sets * 0.6));
       if (ph.id === 'sila' && it.main) it.reps = Math.max(3, it.reps - 2);
       if (ph.id === 'przedsezon' && !it.main) it.sets = Math.max(2, it.sets - 1);
-      it.slot = `${ph.id === 'powrot' ? 'r' : 'w'}:${dayKey}:${idx}`;
+      it.idx = idx;
       return it;
     });
   }
@@ -172,6 +188,12 @@ export function dayPlan(week, dayKey, swaps = {}) {
   if (ph.id === 'fundament' && week === 3 && d.cond === '4x4') d.cond = '3x3';
   return d;
 }
+
+// Własne ćwiczenia (z ustawień) dopisują się do katalogu.
+const BANNED = /przysiad|squat|martw|deadlift|\brdl\b|good ?morning|wall ?sit|swing/i;
+export const isBanned = name => BANNED.test(name || '');
+export function registerCustom(custom = {}) { for (const [id, e] of Object.entries(custom)) EX[id] = { ...e, custom: true }; }
+export const PATTERN_NAMES = { moc: 'Moc', kolano: 'Nogi · kolano', biodro: 'Nogi · biodro', pchanie_poz: 'Wypychanie poziome', pchanie_pion: 'Wypychanie pionowe', barki: 'Barki', kontakt: 'Kontakt', ciag_pion: 'Przyciąganie pionowe', ciag_poz: 'Przyciąganie poziome', ramiona: 'Ramiona', carry: 'Carry', core: 'Core', lydki: 'Łydki', wlasne: 'Własne' };
 
 export function alternatives(exId) {
   const p = EX[exId]?.p;
