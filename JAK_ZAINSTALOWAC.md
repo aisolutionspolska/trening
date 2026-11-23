@@ -5,8 +5,13 @@
 - Działa bez internetu. Dane zapisują się na urządzeniu.
 - Nic nie trzeba instalować na Macu i nic nie kosztuje.
 
-## Krok 1. Wrzucenie na GitHub Pages (za darmo, raz)
-Claude może to zrobić za Ciebie po Twojej zgodzie. Ręcznie:
+## Adres aplikacji
+**https://aisolutionspolska.github.io/trening/**
+
+(Repozytorium: https://github.com/aisolutionspolska/trening – publiczne, bo darmowe GitHub Pages tego wymaga. W kodzie nie ma Twoich danych; dane są tylko w telefonie.)
+
+## Krok 1. GitHub Pages – zrobione 23.11.2026
+Gdyby trzeba było powtórzyć ręcznie:
 1. Załóż na GitHubie nowe repozytorium, np. `trening`.
 2. Wrzuć do niego zawartość folderu `aplikacja`.
 3. W repozytorium wejdź w Settings → Pages → Source: „Deploy from a branch”, gałąź `main`, folder `/ (root)`.
