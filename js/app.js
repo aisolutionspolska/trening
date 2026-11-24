@@ -1,6 +1,6 @@
 import { db, uid, exportAll, importAll } from './db.js';
 import { EX, dayPlan, baseItems, variantOf, alternatives, phaseFor, DAY_KEYS, DAY_SHORT, COND_VARIANTS, MAIN_LIFTS,
-  registerCustom, isBanned, PATTERN_NAMES } from './plan.js';
+  registerCustom, isBanned, PATTERN_NAMES, DRILLS, rampSets } from './plan.js';
 import { dateKey, parseKey, addDays, mondayOf, weekNumber, fmtShort, fmtNum, fmtKg, fmtClock,
   FEEL, targetFor, bestSet, e1rm, macros, sumMacros } from './logic.js';
 import { BASE, searchOFF, byBarcode, canScan } from './food.js';
@@ -10,12 +10,14 @@ const DEFAULTS = { kcal: 3050, protein: 155, supps: ['Kreatyna', 'Witamina D', '
 const S = {
   route: 'dzis', p: {}, settings: null, days: {}, sessions: [], food: [], products: [], active: null,
   sheet: null, toast: null, q: '', offResults: [], offState: '', tab: 'ostatnie', g: null, endPain: null,
-  progTab: 'sila', dietDate: dateKey(),
+  progTab: 'sila', dietDate: dateKey(), open: {}, dt: null, gw: 0,
 };
+const APP_VERSION = '3';
 const MEALS = [['sniadanie', 'Śniadanie'], ['obiad', 'Obiad'], ['kolacja', 'Kolacja'], ['przekaski', 'Przekąski']];
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clone = o => JSON.parse(JSON.stringify(o));
+const nb = t => esc(t).replace(/(^|[\s(])([aiouwzAIOUWZ])\s/g, '$1$2\u00a0');
 
 async function load() {
   const st = await db.get('kv', 'settings');
@@ -56,7 +58,7 @@ const setTxt = (ex, s) => `${ex.unit === 'kg' && s.kg != null ? `${fmtKg(s.kg)} 
 
 // ---------------- nawigacja ----------------
 function go(route, p = {}, replace = false) {
-  S.route = route; S.p = p; S.sheet = null;
+  S.route = route; S.p = p; S.sheet = null; S.open = {};
   const st = { route, p };
   replace ? history.replaceState(st, '') : history.pushState(st, '');
   render(); window.scrollTo(0, 0);
@@ -64,7 +66,7 @@ function go(route, p = {}, replace = false) {
 window.addEventListener('popstate', e => { if (S.sheet) { S.sheet = null; render(); return; } const st = e.state || { route: 'dzis', p: {} }; S.route = st.route; S.p = st.p || {}; render(); });
 function nav(active) {
   const it = (r, i, l) => `<button class="nv ${active === r ? 'on' : ''}" data-a="nav" data-r="${r}">${ic(i)}${l}</button>`;
-  return `<nav class="nav" aria-label="Główna nawigacja">${it('dzis', 'home', 'Dziś')}${it('tydzien', 'train', 'Trening')}${it('dieta', 'food', 'Dieta')}${it('postep', 'prog', 'Postęp')}</nav>`;
+  return `<nav class="nav" aria-label="Główna nawigacja">${it('dzis', 'home', 'Dziś')}${it('tydzien', 'train', 'Plan')}${it('dieta', 'food', 'Dieta')}${it('postep', 'prog', 'Postęp')}</nav>`;
 }
 let toastT = null;
 function toast(msg, undo = null) { S.toast = { msg, undo }; render(); clearTimeout(toastT); toastT = setTimeout(() => { S.toast = null; render(); }, undo ? 5000 : 2400); }
@@ -175,26 +177,33 @@ function setsDoneFor(ses, active, item, i) {
   const e = (ses.exercises || []).find((x, j) => x.ex === item.ex && (x.idx === undefined || x.idx === i)) || (ses.exercises || []).find(x => x.ex === item.ex);
   return e ? e.sets.length : 0;
 }
+function drillsDone(ids, map) { return (ids || []).filter(id => map?.[id]).length; }
 screens.tydzien = () => {
-  const w = curWeek(); const ph = phaseFor(w); const nx = nextSlot();
+  const cw = curWeek(); const w = Math.max(1, cw + S.gw); const ph = phaseFor(w); const nx = w === cw ? nextSlot() : null;
   const inBlock = w <= 2 ? [w, 2] : w <= 6 ? [w - 2, 4] : w <= 11 ? [w - 6, 5] : [1, 1];
   const blocks = DAY_KEYS.map(dk => {
     const pl = plan(w, dk); const ses = slotSession(w, dk); const act = isActiveSlot(w, dk) ? S.active : null;
     const tag = ses ? ic('check', 18, 2.4) : act ? '<span class="pill">Teraz</span>' : dk === nx ? '<span class="pill">Następny</span>' : quads(pl.intensity);
     let grid = '';
+    const wRow = pl.warm ? `<div class="grow"><span>Rozgrzewka</span>${squares(pl.warm.length, drillsDone(pl.warm, act ? act.warm : ses?.warm))}</div>` : '';
+    const cRow = pl.cool ? `<div class="grow"><span>Rozciąganie</span>${squares(pl.cool.length, drillsDone(pl.cool, act ? act.cool : ses?.cool))}</div>` : '';
     if (pl.items) {
-      grid = pl.items.map((it, i) => `<div class="grow"><span>${esc(EX[it.ex].name)}</span>${squares(it.sets, setsDoneFor(ses, act, it, i))}</div>`).join('');
+      grid = pl.items.map((it, i) => { const ex = EX[it.ex]; const t = targetFor(it, S.sessions);
+        return `<div class="grow"><span>${esc(ex.name)}<small>${it.sets} × ${t.reps}${unitTxt(ex)}${ex.unit === 'kg' && t.kg != null ? ` · ${fmtKg(t.kg)} kg` : ''}</small></span>${squares(it.sets, setsDoneFor(ses, act, it, i))}</div>`; }).join('');
       if (pl.cond) { const v = COND_VARIANTS[pl.cond]; const r = (act?.cond?.doneRounds) ?? ses?.cond?.rounds ?? 0; grid += `<div class="grow"><span>${v.name}</span>${squares(v.rounds, r)}</div>`; }
     } else {
       const chk = ses?.checklist || {}; const list = pl.checklist || [];
       grid = list.length ? `<div class="grow"><span>Do odhaczenia</span>${squares(list.length, list.filter(c => chk[c.id]).length)}</div>` : '';
       if (pl.condChoice) { const v = COND_VARIANTS[ses?.cond?.variant || pl.condChoice[0]]; const r = act?.cond?.doneRounds ?? ses?.cond?.rounds ?? 0; grid = `<div class="grow"><span>Interwały${ses?.cond ? ` · ${v.name}` : ''}</span>${squares(v.rounds, r)}</div>` + grid; }
     }
+    grid = wRow + grid + cRow;
     return `<button class="gday ${dk === nx && !ses ? 'nx' : ''}" data-a="slot" data-dk="${dk}" data-w="${w}">
       <div class="row ghead"><span><b>${DAY_SHORT[dk]}</b>${esc(pl.title)}</span>${tag}</div>${grid}</button>`;
   }).join('');
   return `<main class="scr has-nav">
-    <div class="row" style="align-items:flex-end"><h1>Tydzień ${w}</h1><span class="n" style="font-size:15px">${ph.name}</span></div>
+    <div class="row" style="align-items:center"><h1>Tydzień ${w}</h1>
+      <div style="display:flex;gap:4px"><button class="ib box" data-a="gw" data-d="-1" aria-label="Poprzedni tydzień" ${w <= 1 ? 'disabled style="opacity:.3"' : ''}>${ic('back', 20)}</button><button class="ib box" data-a="gw" data-d="1" aria-label="Następny tydzień">${ic('next', 20)}</button></div></div>
+    <div class="row" style="margin-top:-8px"><span class="n" style="font-size:15px">${ph.name}</span>${w !== cw ? `<button class="lnk" style="height:28px" data-a="gw0">Ten tydzień</button>` : ''}</div>
     <div class="segs">${Array.from({ length: inBlock[1] }, (_, i) => `<span class="${i + 1 < inBlock[0] ? 'd' : i + 1 === inBlock[0] ? 'c' : ''}"></span>`).join('')}</div>
     <div class="gweek">${blocks}</div>
   </main>${nav('tydzien')}`;
@@ -205,7 +214,7 @@ screens.podglad = () => {
   const { dk } = S.p; const w = Number(S.p.w); const pl = plan(w, dk);
   const ses = slotSession(w, dk);
   const head = `<div class="top"><button class="ib" data-a="back" aria-label="Wróć">${ic('back')}</button>${pl.items ? `<button class="tb" data-a="editMode">${S.p.edit ? 'Gotowe' : 'Edytuj plan'}</button>` : ''}</div>
-    <div class="row"><h1 style="font-size:30px">${pl.title}</h1>${quads(pl.intensity)}</div>`;
+    <div class="row"><h1 style="font-size:30px">${pl.title}</h1>${ses ? `<span class="int">${ic('check', 16, 2.4)}Zrobiony</span>` : quads(pl.intensity)}</div>`;
   if (pl.items) {
     const ed = S.p.edit;
     const list = pl.items.map((it, i) => {
@@ -217,17 +226,22 @@ screens.podglad = () => {
         : `<div class="li" style="grid-template-columns:28px 1fr;min-height:58px"><span class="mut sm" style="font-weight:600">${String(i + 1).padStart(2, '0')}</span><span style="font-weight:600;line-height:1.2">${esc(ex.name)}<small>${tg}</small></span></div>`;
     }).join('');
     const cond = pl.cond ? `<div class="li" style="grid-template-columns:28px 1fr;min-height:52px"><span class="mut sm" style="font-weight:600">+</span><span style="font-weight:600">${COND_VARIANTS[pl.cond].name}</span></div>` : '';
-    return `<main class="scr">${head}<div style="border-top:1px solid var(--line2)">${list}${cond}</div>
+    const dl = (k, ids) => ids ? `<button class="li" style="grid-template-columns:28px 1fr 20px;min-height:58px" data-a="drillInfo" data-k="${k}"><span class="mut sm" style="font-weight:600">${k === 'warm' ? '↑' : '↓'}</span><span style="font-weight:600;line-height:1.2">${k === 'warm' ? 'Rozgrzewka' : 'Rozciąganie'}<small>${ids.length} ćwiczeń · ok. ${k === 'warm' ? 12 : 10} min</small></span>${ic('next', 18)}</button>` : '';
+    const canStart = w === curWeek();
+    return `<main class="scr">${head}<div style="border-top:1px solid var(--line2)">${ed ? '' : dl('warm', pl.warm)}${list}${cond}${ed ? '' : dl('cool', pl.cool)}</div>
       ${ed ? `<div class="grid2" style="gap:8px"><button class="sb" data-a="addExOpen" data-ctx="plan">${ic('plus', 14, 2)}Ćwiczenie</button><button class="sb" data-a="resetPlan" ${pl.edited ? '' : 'disabled'}>Przywróć plan</button></div>` : ''}
       <div class="spacer"></div>
-      ${ses ? `<button class="sb" data-a="viewSes" data-id="${ses.id}">Zapis treningu</button>` : ''}
-      ${!ed ? `<button class="pb split" data-a="start" data-dk="${dk}" data-w="${w}">${ses ? 'Zrób jeszcze raz' : 'Zacznij'} ${ic('arrow', 20)}</button>` : ''}</main>`;
+      ${ses && !ed ? `<div class="grid2" style="gap:8px"><button class="sb" data-a="viewSes" data-id="${ses.id}">Zapis treningu</button><button class="sb" data-a="unmark" data-id="${ses.id}">Niezrobiony</button></div>` : ''}
+      ${!ed && !ses && canStart ? `<button class="pb split" data-a="start" data-dk="${dk}" data-w="${w}">Zacznij ${ic('arrow', 20)}</button>` : ''}</main>`;
   }
   const chk = S.p.chk || ses?.checklist || {};
   const list = (pl.checklist || []).map(c => {
     const v = chk[c.id];
     const mins = c.minutes ? `<span class="chips" style="margin-left:auto">${c.minutes.map(m => `<button class="sb sm" style="${v === m ? 'background:var(--inv-bg);color:var(--inv-ink);border-color:var(--inv-bg)' : ''}" data-a="chkMin" data-id="${c.id}" data-m="${m}">${m}′</button>`).join('')}</span>` : '';
-    return `<div class="chk" style="gap:10px"><button class="box ${v ? 'on' : ''}" style="background:${v ? 'var(--ink)' : 'none'}" data-a="chk" data-id="${c.id}" aria-label="${esc(c.label)}" aria-pressed="${!!v}">${v ? ic('check', 16, 2.6) : ''}</button><span>${c.label}</span>${mins}</div>`;
+    const open = S.open[c.id];
+    return `<div class="dr"><button class="cb" data-a="chk" data-id="${c.id}" aria-label="${esc(c.label)}" aria-pressed="${!!v}"><span class="box ${v ? 'on' : ''}">${v ? ic('check', 16, 2.6) : ''}</span></button>
+      ${c.how ? `<button class="drn" data-a="how" data-id="${c.id}" aria-expanded="${!!open}">${nb(c.label)}${ic(open ? 'up' : 'down', 14, 2)}</button>` : `<span class="drn">${nb(c.label)}</span>`}${mins}</div>
+      ${open ? `<div class="how">${nb(c.how)}</div>` : ''}`;
   }).join('');
   const cv = S.p.cv || pl.condChoice?.[0];
   const condPick = pl.condChoice ? `<div class="field"><span class="lb k">Interwały</span><div class="tiles" style="grid-template-columns:repeat(${pl.condChoice.length},minmax(0,1fr))">
@@ -236,8 +250,9 @@ screens.podglad = () => {
   return `<main class="scr">${head}${condPick}
     ${list ? `<div style="border-top:1px solid var(--line2)">${list}</div>` : ''}
     <div class="spacer"></div>
-    ${pl.condChoice ? `<button class="pb split" data-a="startCond" data-dk="${dk}" data-w="${w}">Zacznij interwały ${ic('arrow', 20)}</button>` : ''}
-    <button class="${pl.condChoice ? 'sb' : 'pb'}" data-a="saveLight" data-dk="${dk}" data-w="${w}">${ses ? 'Zapisz zmiany' : 'Zapisz dzień'}</button>
+    ${pl.condChoice && !ses && w === curWeek() ? `<button class="pb split" data-a="startCond" data-dk="${dk}" data-w="${w}">${pl.warm ? 'Zacznij od rozgrzewki' : 'Zacznij interwały'} ${ic('arrow', 20)}</button>` : ''}
+    ${ses ? `<div class="grid2" style="gap:8px"><button class="sb" data-a="unmark" data-id="${ses.id}">Niezrobiony</button><button class="pb" style="height:48px" data-a="saveLight" data-dk="${dk}" data-w="${w}">Zapisz zmiany</button></div>`
+      : w === curWeek() ? `<button class="${pl.condChoice ? 'sb' : 'pb'}" data-a="saveLight" data-dk="${dk}" data-w="${w}">Zapisz dzień</button>` : ''}
   </main>`;
 };
 
@@ -257,7 +272,7 @@ screens.seria = () => {
   return `<main class="scr" style="gap:16px">
     <div class="top"><button class="ib" data-a="exList" aria-label="Ćwiczenia">${ic('menu')}</button><span class="clock" data-tick="elapsed">0:00</span><button class="tb" data-a="finish">Zakończ</button></div>
     <div class="segs">${a.items.map((x, i) => `<span class="${(a.done[i] || []).length >= x.sets ? 'd' : i === a.idx ? 'c' : ''}"></span>`).join('')}</div>
-    <div><div class="h2" style="font-size:24px">${esc(ex.name)}</div>${chips ? `<div class="chips" style="margin-top:10px">${chips}</div>` : ''}</div>
+    <div><div class="h2" style="font-size:24px">${esc(ex.name)}</div>${chips ? `<div class="chips" style="margin-top:10px">${chips}</div>` : ''}${rampHtml(it, ex, done, kg)}</div>
     <div class="sec" style="align-items:center;text-align:center;padding-top:22px;gap:0">
       <div class="lb k">Seria ${setNo}${over ? '' : ` z ${it.sets}`}</div>
       ${needKg ? `<div class="h2" style="margin:22px 0 6px">Wybierz ciężar</div>`
@@ -275,6 +290,36 @@ screens.seria = () => {
       ${['easy', 'ok', 'hard'].map(f => `<button class="feel ${f === 'ok' ? 'pri' : ''}" data-a="log" data-f="${f}"><b>${FEEL[f].label}</b></button>`).join('')}
     </div>
     <div style="display:flex;justify-content:center;gap:16px"><button class="lnk" data-a="other">Zrobiłem inaczej</button><button class="lnk" data-a="skipEx">Pomiń ćwiczenie</button></div>`}
+  </main>`;
+};
+
+function rampHtml(it, ex, done, kg) {
+  if (done.length || !it.main) return '';
+  const r = rampSets(it.ex, kg); if (!r.length) return '';
+  return `<div class="ramp"><span class="lb k">Rozgrzewka</span>${r.map(x => `<span class="n">${it.ex === 'pullup_w' && !x.kg ? 'bez ciężaru' : fmtKg(x.kg)} × ${x.reps}</span>`).join('')}</div>`;
+}
+
+// ---------- Rozgrzewka / rozciąganie ----------
+function drillRow(id, on, act = 'drillChk') {
+  const d = DRILLS[id]; const open = S.open[id]; const run = S.dt?.id === id;
+  return `<div class="dr"><button class="cb" data-a="${act}" data-id="${id}" aria-pressed="${on}" aria-label="${esc(d.name)}"><span class="box ${on ? 'on' : ''}">${on ? ic('check', 16, 2.6) : ''}</span></button>
+    <button class="drn" data-a="how" data-id="${id}" aria-expanded="${!!open}">${nb(d.name)}${ic(open ? 'up' : 'down', 14, 2)}<small>${nb(d.dose)}</small></button>
+    ${d.t ? `<button class="sb sm tmr ${run ? 'on' : ''}" data-a="drillTimer" data-id="${id}" aria-label="Minutnik ${fmtClock(d.t)}">${run ? `<span data-tick="dt">${fmtClock(Math.max(0, (S.dt.until - Date.now()) / 1000))}</span>` : `▶ ${fmtClock(d.t)}`}</button>` : '<span></span>'}</div>
+    ${open ? `<div class="how">${nb(d.how)}</div>` : ''}`;
+}
+screens.drills = () => {
+  const a = S.active; if (!a) return screens.dzis();
+  const k = S.p.k === 'cool' ? 'cool' : 'warm';
+  const ids = (k === 'warm' ? a.warmList : a.coolList) || []; const done = a[k] || {};
+  const n = drillsDone(ids, done);
+  const nextLbl = k === 'cool' ? 'Koniec' : a.items.length ? 'Ćwiczenia' : 'Interwały';
+  return `<main class="scr">
+    <div class="top">${a.items.length ? `<button class="ib" data-a="exList" aria-label="Ćwiczenia">${ic('menu')}</button>` : '<span style="width:44px"></span>'}<span class="clock" data-tick="elapsed">0:00</span><button class="tb" data-a="drillsNext">Pomiń</button></div>
+    <div class="row" style="align-items:flex-end"><h1 style="font-size:30px">${k === 'warm' ? 'Rozgrzewka' : 'Rozciąganie'}</h1><span class="n" style="font-size:15px">${n}/${ids.length}</span></div>
+    <div class="segs">${ids.map(id => `<span class="${done[id] ? 'd' : ''}"></span>`).join('')}</div>
+    <div style="border-top:1px solid var(--line2)">${ids.map(id => drillRow(id, !!done[id])).join('')}</div>
+    <div class="spacer"></div>
+    <button class="pb split" data-a="drillsNext">${nextLbl} ${ic('arrow', 20)}</button>
   </main>`;
 };
 
@@ -361,11 +406,14 @@ screens.zapis = () => {
     <div class="chips">${e.sets.map((st, j) => `<button class="chip" data-a="editSetSaved" data-i="${i}" data-j="${j}">${setTxt(EX[e.ex] || { unit: 'kg' }, st)} · ${FEEL[st.feel]?.label || ''}</button>`).join('')}</div></div>`).join('');
   const chk = s.checklist ? Object.entries(s.checklist).filter(([, v]) => v).length : 0;
   return `<main class="scr">
-    <div class="top"><button class="ib" data-a="back" aria-label="Wróć">${ic('back')}</button><button class="ib" data-a="delSes" data-id="${s.id}" aria-label="Usuń trening">${ic('trash', 20)}</button></div>
+    <div class="top"><button class="ib" data-a="back" aria-label="Wróć">${ic('back')}</button></div>
     <div><h1 style="font-size:30px">${esc(s.title)}</h1><div class="mut sm" style="margin-top:6px">${fmtShort(parseKey(s.date))} · ${Math.max(1, Math.round(((s.endedAt || 0) - (s.startedAt || 0)) / 60000))} min${s.painAfter != null ? ` · lędźwia ${s.painAfter}` : ''}</div></div>
     ${ex}
     ${s.cond ? `<div class="sec" style="gap:4px"><div class="n" style="font-size:16px">${COND_VARIANTS[s.cond.variant]?.name || ''}</div><div class="mut sm">${s.cond.rounds} rund${s.cond.rpe ? ` · RPE ${s.cond.rpe}` : ''}</div></div>` : ''}
     ${chk ? `<div class="sec"><div class="mut sm">Odhaczone: ${chk}</div></div>` : ''}
+    ${s.warmN || s.coolN ? `<div class="sec" style="gap:4px"><div class="sm">${s.warmN ? `Rozgrzewka ${drillsDone(Object.keys(s.warm || {}), s.warm)}/${s.warmN}` : ''}${s.warmN && s.coolN ? ' · ' : ''}${s.coolN ? `Rozciąganie ${drillsDone(Object.keys(s.cool || {}), s.cool)}/${s.coolN}` : ''}</div></div>` : ''}
+    <div class="spacer"></div>
+    <button class="sb" data-a="unmark" data-id="${s.id}">Oznacz jako niezrobiony</button>
   </main>`;
 };
 
@@ -536,10 +584,15 @@ function sheetHtml() {
            <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px"><button class="sb" style="height:56px" data-a="setDelete">Usuń serię</button><button class="pb" data-a="setSave">Zapisz</button></div>`}`;
   } else if (sh.type === 'exList') {
     const a = S.active;
-    inner = `<div class="h2" style="font-size:24px">Ćwiczenia</div><div>${a.items.map((it, i) => { const n = (a.done[i] || []).length; return `<div class="li" style="grid-template-columns:1fr auto auto"><button style="background:none;border:0;padding:0;text-align:left;font-size:15px;font-weight:${i === a.idx ? 650 : 500}" data-a="jump" data-i="${i}">${esc(EX[it.ex].name)}<small>${n}/${it.sets}${n >= it.sets ? ' ✓' : ''}</small></button>
-      <button class="sq" data-a="moveActive" data-i="${i}" data-d="-1" aria-label="W górę">${ic('up', 16, 2)}</button><button class="sq" data-a="moveActive" data-i="${i}" data-d="1" aria-label="W dół">${ic('down', 16, 2)}</button></div>`; }).join('')}</div>
+    const dEntry = k => { const ids = k === 'warm' ? a.warmList : a.coolList; if (!ids?.length) return ''; return `<div class="li" style="grid-template-columns:1fr"><button style="background:none;border:0;padding:0;text-align:left;font-size:15px;font-weight:${a.stage === k ? 650 : 500}" data-a="jumpDrills" data-k="${k}">${k === 'warm' ? 'Rozgrzewka' : 'Rozciąganie'}<small>${drillsDone(ids, a[k])}/${ids.length}</small></button></div>`; };
+    inner = `<div class="h2" style="font-size:24px">Ćwiczenia</div><div>${dEntry('warm')}${a.items.map((it, i) => { const n = (a.done[i] || []).length; return `<div class="li" style="grid-template-columns:1fr auto auto"><button style="background:none;border:0;padding:0;text-align:left;font-size:15px;font-weight:${i === a.idx ? 650 : 500}" data-a="jump" data-i="${i}">${esc(EX[it.ex].name)}<small>${n}/${it.sets}${n >= it.sets ? ' ✓' : ''}</small></button>
+      <button class="sq" data-a="moveActive" data-i="${i}" data-d="-1" aria-label="W górę">${ic('up', 16, 2)}</button><button class="sq" data-a="moveActive" data-i="${i}" data-d="1" aria-label="W dół">${ic('down', 16, 2)}</button></div>`; }).join('')}${dEntry('cool')}</div>
       <button class="sb" data-a="addExOpen" data-ctx="active">${ic('plus', 14, 2)}Dodaj ćwiczenie</button>
       <button class="lnk" data-a="discard">Odrzuć trening</button>`;
+  } else if (sh.type === 'drillInfo') {
+    const pl = plan(Number(S.p.w), S.p.dk); const ids = (sh.k === 'warm' ? pl.warm : pl.cool) || [];
+    inner = `<div class="h2" style="font-size:24px">${sh.k === 'warm' ? 'Rozgrzewka' : 'Rozciąganie'}</div>
+      <div>${ids.map(id => { const d = DRILLS[id]; return `<div class="sec" style="gap:4px;padding:12px 0"><div class="row" style="align-items:baseline"><b style="font-weight:600">${nb(d.name)}</b><span class="sm" style="text-align:right">${nb(d.dose)}</span></div><div class="sm mut" style="line-height:1.45">${nb(d.how)}</div></div>`; }).join('')}</div>`;
   } else if (sh.type === 'rest') {
     inner = `<div class="h2" style="font-size:24px">Przerwa</div><div class="tiles" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[45, 60, 90, 120, 150, 180, 210, 240, 300].map(v => `<button class="tile ${sh.v === v ? 'on' : ''}" style="font-size:15px" data-a="restSet" data-v="${v}">${fmtClock(v)}</button>`).join('')}</div>`;
   } else if (sh.type === 'editItem') {
@@ -567,7 +620,8 @@ function sheetHtml() {
       <div class="grid2"><label class="field"><span class="lb k">Kalorie</span><input type="number" inputmode="numeric" id="setKcal" value="${s.kcal}"></label><label class="field"><span class="lb k">Białko, g</span><input type="number" inputmode="numeric" id="setProt" value="${s.protein}"></label></div>
       <label class="field"><span class="lb k">Suplementy</span><input type="text" id="setSupps" value="${esc(s.supps.join(', '))}"></label>
       <button class="pb mid" data-a="saveSettings">Zapisz</button>
-      <div class="sec" style="gap:8px"><span class="lb k">Kopia</span><div class="grid2" style="gap:8px"><button class="sb" data-a="export">Zapisz kopię</button><label class="sb" style="cursor:pointer">Wczytaj<input type="file" accept="application/json,.json" id="importFile" style="display:none"></label></div></div>`;
+      <div class="sec" style="gap:8px"><span class="lb k">Kopia</span><div class="grid2" style="gap:8px"><button class="sb" data-a="export">Zapisz kopię</button><label class="sb" style="cursor:pointer">Wczytaj<input type="file" accept="application/json,.json" id="importFile" style="display:none"></label></div></div>
+      <div class="mut sm">Wersja ${APP_VERSION}</div>`;
   } else if (sh.type === 'weigh') {
     inner = `<div class="h2" style="font-size:24px">Waga</div>
       <div class="row" style="border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:16px 0">
@@ -613,9 +667,11 @@ function tick() {
     if (t === 'elapsed') el.textContent = fmtClock((Date.now() - a.startedAt) / 1000);
     if (t === 'rest') el.textContent = fmtClock(Math.max(0, (a.restUntil - Date.now()) / 1000));
     if (t === 'restbar') el.style.width = `${Math.min(100, 100 - ((a.restUntil - Date.now()) / 1000 / a.restTotal) * 100)}%`;
+    if (t === 'dt' && S.dt) el.textContent = fmtClock(Math.max(0, (S.dt.until - Date.now()) / 1000));
     if (t === 'cond') el.textContent = fmtClock(condLeft());
     if (t === 'condbar' && a.cond) { const tot = a.cond.total || 1; el.style.width = `${Math.min(100, 100 - (condLeft() / tot) * 100)}%`; }
   });
+  if (S.dt && Date.now() >= S.dt.until) { S.dt = null; beep(3); render(); }
   if (S.route === 'przerwa' && a.restUntil && Date.now() >= a.restUntil) { a.restUntil = null; beep(2); go('seria', {}, true); saveActive(); }
   if (S.route === 'interwaly' && a.cond && !a.cond.paused && !a.cond.finished && Date.now() >= a.cond.until) condAdvance();
 }
@@ -625,9 +681,16 @@ setInterval(tick, 250);
 async function startSession(dk, w) {
   const pl = plan(w, dk);
   const items = pl.items.map(it => ({ ...it, target: targetFor(it, S.sessions) }));
-  S.active = { id: uid(), date: tKey(), dayKey: dk, week: w, title: pl.title, type: pl.type, startedAt: Date.now(), items, idx: 0, done: {}, condPlan: pl.cond || null };
+  S.active = { id: uid(), date: tKey(), dayKey: dk, week: w, title: pl.title, type: pl.type, startedAt: Date.now(), items, idx: 0, done: {}, condPlan: pl.cond || null, ...drillState(pl) };
   if (S.days[tKey()]?.off) { S.days[tKey()].off = false; saveDay(tKey()); }
-  await saveActive(); keepScreen(true); go('seria', {}, true);
+  await saveActive(); keepScreen(true);
+  S.active.stage === 'warm' ? go('drills', { k: 'warm' }, true) : go('seria', {}, true);
+}
+function drillState(pl) { const warmList = pl.warm || []; const coolList = pl.cool || []; return { warmList, coolList, warm: {}, cool: {}, stage: warmList.length ? 'warm' : 'main' }; }
+function toCool() {
+  const a = S.active;
+  if (a.coolList?.length && a.stage !== 'cool' && a.stage !== 'done') { a.stage = 'cool'; saveActive(); go('drills', { k: 'cool' }, true); }
+  else { a.stage = 'done'; saveActive(); go('koniec', {}, true); }
 }
 function nextUndone(fromI) {
   const a = S.active;
@@ -649,7 +712,7 @@ async function logSet(kg, reps, feel) {
   a.restTotal = it.rest; a.restUntil = Date.now() + it.rest * 1000;
   S.sheet = null; await saveActive(); go('przerwa', {}, true); toast('Seria zapisana', undo);
 }
-function afterStrength() { const a = S.active; if (a.condPlan && !a.cond) return startCondFor(a.condPlan); go('koniec', {}, true); }
+function afterStrength() { const a = S.active; if (a.condPlan && !a.cond) return startCondFor(a.condPlan); toCool(); }
 function startCondFor(variant) {
   const a = S.active;
   a.cond = { variant, round: 1, ph: 'pre', until: Date.now() + 10000, total: 10, paused: false, doneRounds: 0 };
@@ -672,6 +735,7 @@ async function saveSession() {
     exercises: a.items.map((it, i) => ({ ex: it.ex, idx: it.idx, target: it.target, sets: a.done[i] || [] })).filter(e => e.sets.length),
     cond: a.cond ? { variant: a.cond.variant, rounds: a.cond.doneRounds || 0, rpe: a.cond.rpe ?? null } : null,
     painAfter: S.endPain, checklist: a.checklist || null,
+    warm: a.warm || null, cool: a.cool || null, warmN: a.warmList?.length || 0, coolN: a.coolList?.length || 0,
   };
   await db.put('sessions', ses); S.sessions = [ses, ...S.sessions.filter(s => s.id !== ses.id)];
   S.active = null; S.endPain = null; await saveActive(); keepScreen(false);
@@ -744,6 +808,27 @@ const A = {
   dayOff: async () => { const k = tKey(); S.days[k] = { ...(S.days[k] || {}), off: true }; await saveDay(k); toast('Dziś wolne', async () => { S.days[k].off = false; await saveDay(k); }); },
   offUndo: async () => { const k = tKey(); S.days[k].off = false; await saveDay(k); render(); },
   open: d => go('podglad', { dk: d.dk, w: Number(d.w) }),
+  gw: d => { S.gw = Math.max(1 - curWeek(), S.gw + Number(d.d)); render(); },
+  gw0: () => { S.gw = 0; render(); },
+  how: d => { S.open = { ...S.open, [d.id]: !S.open[d.id] }; render(); },
+  drillInfo: d => { S.sheet = { type: 'drillInfo', k: d.k }; render(); },
+  drillChk: async d => { const k = S.p.k === 'cool' ? 'cool' : 'warm'; const m = S.active[k] = S.active[k] || {}; m[d.id] = !m[d.id]; await saveActive(); render(); },
+  drillTimer: d => { unlockAudio(); if (S.dt?.id === d.id) { S.dt = null; } else { S.dt = { id: d.id, until: Date.now() + DRILLS[d.id].t * 1000 }; keepScreen(true); } render(); },
+  drillsNext: async () => {
+    const a = S.active; S.dt = null;
+    if (S.p.k === 'cool') { a.stage = 'done'; await saveActive(); return go('koniec', {}, true); }
+    a.stage = 'main'; await saveActive();
+    if (a.items.length) return go('seria', {}, true);
+    if (a.condPlan) return startCondFor(a.condPlan);
+    toCool();
+  },
+  jumpDrills: async d => { const a = S.active; a.stage = d.k; a.restUntil = null; S.sheet = null; await saveActive(); go('drills', { k: d.k }, true); },
+  unmark: async d => {
+    const s = S.sessions.find(x => x.id === d.id); if (!s) return;
+    await db.del('sessions', d.id); S.sessions = S.sessions.filter(x => x.id !== d.id);
+    go('tydzien', {}, true);
+    toast('Oznaczony jako niezrobiony', async () => { await db.put('sessions', s); S.sessions = [s, ...S.sessions].sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0)); });
+  },
   slot: d => {
     const w = Number(d.w); const ses = slotSession(w, d.dk);
     if (isActiveSlot(w, d.dk)) return A.resume();
@@ -751,7 +836,7 @@ const A = {
     go('podglad', { dk: d.dk, w });
   },
   viewSes: d => go('zapis', { id: d.id }),
-  resume: () => { const a = S.active; go(a.cond ? 'interwaly' : a.restUntil && a.restUntil > Date.now() ? 'przerwa' : a.items.length ? 'seria' : 'koniec'); keepScreen(true); },
+  resume: () => { const a = S.active; if (a.stage === 'warm' || a.stage === 'cool') { keepScreen(true); return go('drills', { k: a.stage }); } go(a.cond && !a.cond.finished ? 'interwaly' : a.cond && a.cond.rpe == null ? 'interwaly' : a.stage === 'done' ? 'koniec' : a.restUntil && a.restUntil > Date.now() ? 'przerwa' : a.items.length ? 'seria' : 'koniec'); keepScreen(true); },
   start: d => { unlockAudio(); if (S.active) { toast('Najpierw zakończ albo odrzuć trwający trening'); return; } startSession(d.dk, Number(d.w)); },
   editMode: () => { S.p.edit = !S.p.edit; render(); },
   // edycja planu
@@ -788,6 +873,8 @@ const A = {
   pickCond: d => { S.p.cv = d.v; render(); },
   saveLight: async d => {
     const w = Number(d.w); const pl = plan(w, d.dk); const old = slotSession(w, d.dk);
+    const chkNow = S.p.chk || old?.checklist || {};
+    if (!Object.values(chkNow).some(Boolean) && !old?.cond) { if (old) return A.unmark({ id: old.id }); toast('Nic nie odhaczone'); return; }
     const ses = { id: old?.id || uid(), date: old?.date || tKey(), dayKey: d.dk, week: w, title: pl.title, type: pl.type, startedAt: old?.startedAt || Date.now(), endedAt: Date.now(), exercises: old?.exercises || [], cond: old?.cond || null, checklist: S.p.chk || old?.checklist || {} };
     await db.put('sessions', ses); S.sessions = [ses, ...S.sessions.filter(s => s.id !== ses.id)];
     go('dzis', {}, true);
@@ -796,8 +883,9 @@ const A = {
   startCond: d => {
     unlockAudio(); if (S.active) { toast('Najpierw zakończ albo odrzuć trwający trening'); return; }
     const w = Number(d.w); const pl = plan(w, d.dk);
-    S.active = { id: uid(), date: tKey(), dayKey: d.dk, week: w, title: pl.title, type: pl.type, startedAt: Date.now(), items: [], idx: 0, done: {}, checklist: S.p.chk || {} };
-    startCondFor(S.p.cv || pl.condChoice[0]);
+    S.active = { id: uid(), date: tKey(), dayKey: d.dk, week: w, title: pl.title, type: pl.type, startedAt: Date.now(), items: [], idx: 0, done: {}, checklist: S.p.chk || {}, condPlan: S.p.cv || pl.condChoice[0], ...drillState(pl) };
+    if (S.active.stage === 'warm') { saveActive(); keepScreen(true); return go('drills', { k: 'warm' }, true); }
+    startCondFor(S.active.condPlan);
   },
   log: d => { unlockAudio(); const c = cur(); logSet(c.kg, c.reps, d.f); },
   other: () => { const c = cur(); S.sheet = { type: 'other', ex: c.it.ex, kg: c.kg ?? null, reps: c.reps, tgt: { kg: c.it.target.kg, reps: c.it.target.reps } }; render(); },
@@ -838,20 +926,17 @@ const A = {
   },
   plus30: () => { S.active.restUntil += 30000; S.active.restTotal += 30; saveActive(); render(); },
   skipRest: () => { S.active.restUntil = null; saveActive(); go('seria', {}, true); },
-  finish: () => go('koniec', {}, true),
-  backToWork: () => A.resume(),
+  finish: () => toCool(),
+  backToWork: () => { const a = S.active; if (a.stage === 'done') a.stage = a.items.length ? 'main' : 'cool'; A.resume(); },
   discard: async () => {
     const snap = S.active; S.active = null; S.sheet = null; await saveActive(); keepScreen(false); go('dzis', {}, true);
     toast('Trening odrzucony', async () => { S.active = snap; await saveActive(); });
   },
-  delSes: async d => {
-    const s = S.sessions.find(x => x.id === d.id); await db.del('sessions', d.id); S.sessions = S.sessions.filter(x => x.id !== d.id);
-    history.back(); setTimeout(() => toast('Trening usunięty', async () => { await db.put('sessions', s); S.sessions = [s, ...S.sessions].sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0)); }), 50);
-  },
+  delSes: async d => A.unmark(d),
   condPause: () => { const c = S.active.cond; if (c.paused) { c.until = Date.now() + c.left * 1000; c.paused = false; } else { c.left = condLeft(); c.paused = true; } saveActive(); render(); },
   condNext: () => condAdvance(),
   condEnd: () => { S.active.cond.finished = true; saveActive(); render(); },
-  rpe: d => { S.active.cond.rpe = Number(d.n); saveActive(); go('koniec', {}, true); },
+  rpe: d => { S.active.cond.rpe = Number(d.n); saveActive(); toCool(); },
   pain: d => { S.endPain = Number(d.n); render(); },
   saveSession: () => saveSession(),
   // dieta
@@ -931,5 +1016,12 @@ app.addEventListener('change', async e => {
   history.replaceState({ route: 'dzis', p: {} }, '');
   if (S.active) keepScreen(true);
   render();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => { });
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    const hadCtrl = !!navigator.serviceWorker.controller; let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtrl && !reloaded) { reloaded = true; location.reload(); } });
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
+      reg.update().catch(() => { });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => { }); });
+    }).catch(() => { });
+  }
 })();

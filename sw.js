@@ -1,5 +1,5 @@
 // Service worker: aplikacja działa bez internetu (np. na siłowni).
-const VERSION = 'trening-v2';
+const VERSION = 'trening-v3';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/db.js', './js/plan.js', './js/logic.js', './js/food.js',
@@ -27,7 +27,7 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin !== location.origin) return;
   // Pliki aplikacji: najpierw sieć (świeża wersja), bez sieci – z pamięci.
-  e.respondWith(fetch(e.request).then(res => {
+  e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(res => {
     const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return res;
   }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
 });

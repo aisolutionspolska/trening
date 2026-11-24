@@ -137,3 +137,21 @@ video.scan{width:100%;aspect-ratio:4/3;background:#000;object-fit:cover}
 .toast{display:flex;align-items:center;gap:16px;justify-content:space-between;min-width:260px}
 .toast button{background:none;border:0;color:inherit;font-weight:650;font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:6px 0}
 .chip{border:0;cursor:pointer;color:inherit}
+.grow{padding:5px 0}
+.grow > span:first-child{display:block}
+.grow small{display:block;font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+
+/* rozgrzewka, rozciąganie, listy z opisem */
+.dr{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:8px;min-height:60px;border-bottom:1px solid var(--line)}
+.cb{width:44px;height:44px;margin-left:-4px;display:flex;align-items:center;justify-content:flex-start;padding:0 0 0 4px;background:none;border:0}
+.drn{background:none;border:0;padding:8px 0;text-align:left;font-size:15px;font-weight:600;line-height:1.25;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.drn svg{display:none}
+.drn[aria-expanded]{flex-direction:row;align-items:center;gap:6px;flex-wrap:wrap}
+.drn[aria-expanded] small{flex-basis:100%}
+.drn[aria-expanded] svg{display:block;color:var(--mut)}
+.drn small{font-size:13px;font-weight:500;color:var(--mut)}
+.how{font-size:14px;line-height:1.5;color:var(--ink);background:var(--panel);padding:10px 12px;margin:0 0 10px}
+.tmr{min-width:76px;font-variant-numeric:tabular-nums}
+.tmr.on{background:var(--inv-bg);color:var(--inv-ink);border-color:var(--inv-bg)}
+.ramp{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-top:12px;padding:10px 12px;border:1px solid var(--line)}
+.ramp .n{font-size:15px}
