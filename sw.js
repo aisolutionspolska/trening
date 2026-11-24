@@ -1,8 +1,8 @@
 // Service worker: aplikacja działa bez internetu (np. na siłowni).
-const VERSION = 'trening-v4';
+const VERSION = 'trening-v5';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
-  './js/app.js', './js/db.js', './js/plan.js', './js/logic.js', './js/food.js',
+  './js/app.js', './js/db.js', './js/plan.js', './js/logic.js', './js/food.js', './js/sync.js',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
 ];
 

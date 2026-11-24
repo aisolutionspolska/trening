@@ -40,10 +40,29 @@ function tx(store, mode, fn) {
   }));
 }
 
-export const db = {
+// raw: bez synchronizacji (używa jej sync.js). db: każda zmiana treningu idzie też do repozytorium.
+export const raw = {
   get: (store, key) => tx(store, 'readonly', os => os.get(key)),
   put: (store, value, key) => tx(store, 'readwrite', os => key === undefined ? os.put(value) : os.put(value, key)),
   del: (store, key) => tx(store, 'readwrite', os => os.delete(key)),
+  all: (store) => tx(store, 'readonly', os => os.getAll()),
+};
+let sessionHook = null;
+export const setSessionHook = f => { sessionHook = f; };
+
+export const db = {
+  get: (store, key) => tx(store, 'readonly', os => os.get(key)),
+  put: async (store, value, key) => {
+    if (store === 'sessions') value.updatedAt = Date.now();
+    const r = await tx(store, 'readwrite', os => key === undefined ? os.put(value) : os.put(value, key));
+    if (store === 'sessions') sessionHook?.(value.id, false);
+    return r;
+  },
+  del: async (store, key) => {
+    const r = await tx(store, 'readwrite', os => os.delete(key));
+    if (store === 'sessions') sessionHook?.(key, true);
+    return r;
+  },
   all: (store) => tx(store, 'readonly', os => os.getAll()),
   keys: (store) => tx(store, 'readonly', os => os.getAllKeys()),
   clear: (store) => tx(store, 'readwrite', os => os.clear()),

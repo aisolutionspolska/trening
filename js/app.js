@@ -1,4 +1,5 @@
-import { db, uid, exportAll, importAll } from './db.js';
+import { db, uid, exportAll, importAll, setSessionHook } from './db.js';
+import { initSync, syncNow, setToken, hasToken, markDirty, status as syncStatus } from './sync.js';
 import { EX, dayPlan, baseItems, variantOf, alternatives, phaseFor, DAY_KEYS, DAY_SHORT, COND_VARIANTS, MAIN_LIFTS,
   registerCustom, isBanned, PATTERN_NAMES, DRILLS, rampSets } from './plan.js';
 import { dateKey, parseKey, addDays, mondayOf, weekNumber, fmtShort, fmtNum, fmtKg, fmtClock,
@@ -12,7 +13,7 @@ const S = {
   sheet: null, toast: null, q: '', offResults: [], offState: '', tab: 'ostatnie', g: null, endPain: null,
   progTab: 'sila', dietDate: dateKey(), open: {}, dt: null, gw: 0,
 };
-const APP_VERSION = '4';
+const APP_VERSION = '5';
 const MEALS = [['sniadanie', 'Śniadanie'], ['obiad', 'Obiad'], ['kolacja', 'Kolacja'], ['przekaski', 'Przekąski']];
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -621,6 +622,10 @@ function sheetHtml() {
       <label class="field"><span class="lb k">Suplementy</span><input type="text" id="setSupps" value="${esc(s.supps.join(', '))}"></label>
       <button class="pb mid" data-a="saveSettings">Zapisz</button>
       <div class="sec" style="gap:8px"><span class="lb k">Kopia</span><div class="grid2" style="gap:8px"><button class="sb" data-a="export">Zapisz kopię</button><label class="sb" style="cursor:pointer">Wczytaj<input type="file" accept="application/json,.json" id="importFile" style="display:none"></label></div></div>
+      <div class="sec" style="gap:8px"><span class="lb k">Synchronizacja z zegarkiem</span>
+        <div class="sm">${hasToken() ? (syncStatus.ok ? `Działa · ostatnio ${new Date(syncStatus.at).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}` : syncStatus.err ? `Błąd: ${esc(syncStatus.err)}` : 'Klucz zapisany') : 'Wyłączona. Wklej klucz z GitHuba.'}</div>
+        <label class="field"><span class="lb k">Klucz GitHub</span><input type="password" id="syncToken" autocomplete="off" placeholder="${hasToken() ? '•••••••• (zapisany)' : 'github_pat_…'}"></label>
+        <div class="grid2" style="gap:8px"><button class="sb" data-a="syncSave">Zapisz klucz</button><button class="sb" data-a="syncGo">Synchronizuj</button></div></div>
       <div class="mut sm">Wersja ${APP_VERSION}</div>`;
   } else if (sh.type === 'weigh') {
     inner = `<div class="h2" style="font-size:24px">Waga</div>
@@ -798,6 +803,12 @@ async function lookupEan(code) {
 
 // ================= AKCJE =================
 const A = {
+  syncSave: async () => {
+    const v = document.getElementById('syncToken')?.value || '';
+    if (!v.trim()) { toast('Wklej klucz'); return; }
+    await setToken(v); toast('Klucz zapisany, synchronizuję…'); render(); await syncNow(); render();
+  },
+  syncGo: async () => { if (!hasToken()) { toast('Najpierw wklej klucz'); return; } await syncNow(); toast(syncStatus.ok ? 'Zsynchronizowane' : 'Błąd: ' + syncStatus.err); render(); },
   nav: d => go(d.r),
   back: () => history.back(),
   undo: async () => { const u = S.toast?.undo; S.toast = null; clearTimeout(toastT); if (u) await u(); render(); },
@@ -1016,6 +1027,14 @@ app.addEventListener('change', async e => {
   history.replaceState({ route: 'dzis', p: {} }, '');
   if (S.active) keepScreen(true);
   render();
+  setSessionHook(markDirty);
+  await initSync(async changed => {
+    if (changed) S.sessions = (await db.all('sessions')).sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0));
+    if (changed || S.sheet?.type === 'settings') render();
+  });
+  syncNow();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncNow(); });
+  setInterval(() => { if (document.visibilityState === 'visible') syncNow(); }, 60000);
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     const hadCtrl = !!navigator.serviceWorker.controller; let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtrl && !reloaded) { reloaded = true; location.reload(); } });
