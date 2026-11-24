@@ -9,6 +9,8 @@ export const EX = {
   lyzwiarz:      { name: 'Skoki łyżwiarza', p: 'moc', unit: 'bw', cue: 'W bok, zatrzymaj lądowanie na 1 s.' },
   rzut_pilka:    { name: 'Rzuty piłką lekarską z rotacją', p: 'moc', unit: 'bw', cue: 'Biodra prowadzą ruch. Na stronę.' },
   // kolano
+  wykrok_prz:    { name: 'Wykrok w przód z hantlami', p: 'kolano', unit: 'kg', inc: 2, start: 12, cue: 'Krok w przód, tylne kolano prawie do podłogi, wracasz odepchnięciem z pięty · kg na hantel.' },
+  wykrok_miejsce:{ name: 'Wykrok w miejscu z hantlami', p: 'kolano', unit: 'kg', inc: 2, start: 12, cue: 'Stopy stoją w miejscu, opuszczasz tylne kolano · na nogę · kg na hantel.' },
   wykrok_wst:    { name: 'Wykrok wsteczny z hantlami', p: 'kolano', unit: 'kg', inc: 2, start: 16, cue: 'Hantle w dłoniach · kg na hantel · 2 s w dół.' },
   wykroki_chodz: { name: 'Wykroki chodzone z hantlami', p: 'kolano', unit: 'kg', inc: 2, start: 14, cue: 'Kg na hantel · powtórzenia na nogę.' },
   wykrok_def:    { name: 'Wykrok wsteczny z deficytem', p: 'kolano', unit: 'kg', inc: 2, start: 12, cue: 'Przednia stopa na talerzu · więcej czwórek.' },
@@ -16,6 +18,8 @@ export const EX = {
   stepup:        { name: 'Step-up na ławkę z hantlami', p: 'kolano', unit: 'kg', inc: 2, start: 12, cue: 'Bez odbijania się dolną nogą · na nogę.' },
   reverse_nordic:{ name: 'Reverse Nordic', p: 'kolano', unit: 'bw', cue: 'Biodra wyprostowane, odchylasz się z kolan.' },
   // biodro
+  mostek_hantel: { name: 'Mostek biodrowy z hantlem', p: 'biodro', unit: 'kg', inc: 2, start: 24, cue: 'Na podłodze, hantel na biodrach (podłóż ręcznik) · 2 s ściskania na górze.' },
+  mostek_jn:     { name: 'Mostek biodrowy jednonóż', p: 'biodro', unit: 'kg', inc: 2, start: 0, cue: 'Na podłodze, hantel na biodrze · na nogę.' },
   hip_thrust:    { name: 'Hip thrust ze sztangą', p: 'biodro', unit: 'kg', inc: 5, start: 60, cue: 'Żebra w dół, bez przeprostu na górze.' },
   hip_thrust_jn: { name: 'Hip thrust jednonóż', p: 'biodro', unit: 'kg', inc: 2, start: 0, cue: 'Hantel na biodrze · na nogę.' },
   mostek_pieta:  { name: 'Mostek z piętą na ławce', p: 'biodro', unit: 'bw', cue: 'Jednonóż · na nogę.' },
@@ -38,7 +42,7 @@ export const EX = {
   // ciągnięcie
   pullup_w:      { name: 'Podciąganie z obciążeniem', p: 'ciag_pion', unit: 'kg', inc: 2.5, start: 0, main: true, cue: 'Kg = obciążenie dodatkowe.' },
   pullup:        { name: 'Podciąganie', p: 'ciag_pion', unit: 'bw', cue: 'Pełny zwis na dole.' },
-  row_incl:      { name: 'Wiosłowanie hantlem z podparciem', p: 'ciag_poz', unit: 'kg', inc: 2, start: 26, cue: 'Klatka na ławce skośnej · kg na hantel.' },
+  row_incl:      { name: 'Wiosłowanie hantlem o ławkę', p: 'ciag_poz', unit: 'kg', inc: 2, start: 14, cue: 'Kolano i dłoń na ławce, plecy płasko · na rękę.' },
   aus_row:       { name: 'Wiosłowanie australijskie', p: 'ciag_poz', unit: 'bw', cue: 'Sztanga w stojakach, ciało w linii.' },
   cable_row:     { name: 'Wyciąg jednorącz poziomo', p: 'ciag_poz', unit: 'kg', inc: 1, start: 15, cue: 'Lekko, z zatrzymaniem · na rękę.' },
   renegade:      { name: 'Wiosłowanie w podporze (renegade)', p: 'ciag_poz', unit: 'kg', inc: 2, start: 12, cue: 'Biodra nie rotują · na rękę.' },
@@ -76,7 +80,9 @@ export const DRILLS = {
   wgs:        { name: 'World’s greatest stretch', dose: '5 na stronę', how: 'Duży wykrok. Dłoń po stronie tylnej nogi na podłodze, łokieć drugiej ręki do kostki przedniej nogi od środka. Potem ta ręka w górę z obrotem tułowia, wzrok za dłonią.' },
   wymachy:    { name: 'Wymachy nóg przód-tył i bok-bok', dose: '10 na nogę w każdą stronę', how: 'Trzymasz się stojaka. Noga luźno jak wahadło, zakres rośnie z każdym wymachem. Tułów stoi prosto.' },
   mostek:     { name: 'Mostek biodrowy', dose: '12', how: 'Leżysz na plecach, stopy blisko pośladków. Wypychasz biodra w górę, ściskasz pośladki 2 s na górze. Żebra w dół, bez wyginania lędźwi.' },
-  wykrok_bw:  { name: 'Wykroki wsteczne bez ciężaru', dose: '6 na nogę', how: 'Krok w tył, tylne kolano prawie do podłogi, tułów prosto. Spokojnie, to tylko rozruch.' },
+  wykrok_bw:  { name: 'Wykroki w przód bez ciężaru', dose: '6 na nogę', how: 'Krok w przód, tylne kolano prawie do podłogi, tułów prosto. Płytko na początku, z każdym powtórzeniem trochę niżej.' },
+  pist_czw:   { name: 'Pistolet: przód uda', dose: '1 min na nogę', t: 60, how: 'Przód i bok uda, od kolana do biodra. Powoli, najdłużej tam, gdzie najbardziej spięte. Omijasz kolano.' },
+  udo_przod:  { name: 'Przód uda leżąc na boku', dose: '2 × 40 s na nogę', t: 40, how: 'Leżysz na boku, dolna noga zgięta przed sobą. Łapiesz stopę górnej nogi i przyciągasz piętę do pośladka. Kolano lekko za linią biodra, napnij pośladek. Ma ciągnąć, nie boleć.' },
   boczny_bw:  { name: 'Wykrok boczny bez ciężaru', dose: '6 na stronę', how: 'Szeroki krok w bok, biodra w tył, druga noga prosta. Czujesz rozciąganie przywodziciela.' },
   deadbug_r:  { name: 'Dead bug', dose: '6 na stronę', how: 'Leżysz, ręce w górę, kolana nad biodrami. Lędźwia dociśnięte do podłogi. Prostujesz przeciwną rękę i nogę z długim wydechem.' },
   passthru:   { name: 'Przenoszenie gumy za głowę', dose: '10', how: 'Szeroki chwyt gumy, proste ręce. Przenosisz gumę nad głową do tyłu i z powrotem. Przy niskim suficie rób to na klęcząco.' },
@@ -98,16 +104,16 @@ export const DRILLS = {
 };
 
 export const WARM = {
-  dol:   ['rower5', 'pist_dol', 'kostka', 'wgs', 'wymachy', 'mostek', 'wykrok_bw', 'deadbug_r'],
+  dol:   ['rower5', 'pist_dol', 'pist_czw', 'kostka', 'wgs', 'wymachy', 'mostek', 'wykrok_bw', 'deadbug_r'],
   gora:  ['rower5', 'roller_pl', 'pist_gora', 'passthru', 'pullapart', 'pompki_lop', 'zwis_lop', 'ksiazka'],
-  cale:  ['rower5', 'roller_pl', 'pist_dol', 'wgs', 'mostek', 'wykrok_bw', 'pullapart', 'pompki_lop'],
+  cale:  ['rower5', 'roller_pl', 'pist_dol', 'pist_czw', 'wgs', 'mostek', 'wykrok_bw', 'pullapart', 'pompki_lop'],
   kond:  ['rower_stop', 'wymachy', 'wgs', 'boczny_bw', 'mostek'],
 };
 export const COOL = {
-  dol:   ['zginacz', 'dwojki', 'zaba', 'czworka', 'lydka', 'pist_dol', 'oddech'],
+  dol:   ['udo_przod', 'zginacz', 'dwojki', 'zaba', 'czworka', 'lydka', 'pist_dol', 'oddech'],
   gora:  ['klatka', 'najszersze', 'tyl_barku', 'triceps', 'zginacz', 'roller_szy', 'oddech'],
-  cale:  ['zginacz', 'dwojki', 'klatka', 'najszersze', 'czworka', 'lydka', 'oddech'],
-  kond:  ['rower_luz', 'zginacz', 'dwojki', 'lydka', 'oddech'],
+  cale:  ['udo_przod', 'zginacz', 'dwojki', 'klatka', 'najszersze', 'czworka', 'lydka', 'oddech'],
+  kond:  ['rower_luz', 'udo_przod', 'zginacz', 'dwojki', 'lydka', 'oddech'],
 };
 
 // Lekkie dni = lista do odhaczenia.
@@ -118,6 +124,7 @@ const CHK_SR = [
   { id: 'chintuck', label: 'Chin tuck / izometria szyi', how: 'Cofasz brodę prosto do tyłu (podwójny podbródek), 5 s, 10 razy. Potem dłoń przy czole, z tyłu i z boków głowy, pchasz głową w dłoń 10 s.' },
   { id: 'wis', label: 'Wis na drążku', how: 'Luźny zwis, 3 × 20–40 s. Rozciąga najszersze i odciąża kręgosłup.' },
   { id: 'jezyk', label: 'Jeżyk 5–10 min', how: 'Stanie na jednej nodze na jeżyku. 30–45 s na nogę, potem z zamkniętymi oczami albo sięganie drugą nogą w 3 kierunkach.' },
+  { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' },
   { id: 'zginacz', label: 'Zginacz biodra w półklęku', how: DRILLS.zginacz.how },
   { id: 'couch', label: 'Couch stretch', how: 'Kolano przy ścianie (albo ławce), stopa w górę po ścianie, druga noga z przodu w wykroku. Napnij pośladek, tułów prosto. 2 × 40 s na stronę.' },
   { id: 'ksiazka', label: 'Otwieranie książki', how: DRILLS.ksiazka.how },
@@ -126,13 +133,15 @@ const CHK_SR = [
 ];
 const CHK_NDZ = [
   { id: 'spacer', label: 'Spacer', minutes: [20, 30, 45, 60] },
-  { id: 'mobilnosc', label: 'Mobilność 20 min', how: 'Zginacz biodra, tył uda z gumą, żaba, „4” leżąc, łydka przy ścianie, klatka w ramie stojaka, oddychanie 90/90. Po 2 × 40 s.' },
+  { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' },
+  { id: 'mobilnosc', label: 'Mobilność 20 min', how: 'Przód uda leżąc na boku, zginacz biodra, tył uda z gumą, żaba, „4” leżąc, łydka przy ścianie, klatka w ramie stojaka, oddychanie 90/90. Po 2 × 40 s.' },
   { id: 'pistolet', label: 'Pistolet do masażu', how: 'Uda, pośladki, łydki, przywodziciele, klatka. Po 30–60 s na partię.' },
   { id: 'sauna', label: 'Sauna' },
 ];
 const CHK_SOB = [
   { id: 'skakanka', label: 'Skakanka albo pogo (start)', how: 'Rozgrzewka stóp i łydek przed interwałami: 3 × 30 s skakanki albo niskich odbić w miejscu. Tylko tam, gdzie nie ma sufitu nad głową.' },
   { id: 'jezyk', label: 'Jeżyk 5 min', how: CHK_SR[5].how },
+  { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' },
   { id: 'sauna', label: 'Sauna' },
 ];
 
@@ -148,14 +157,14 @@ export const COND_VARIANTS = {
 // Tydzień docelowy (od tygodnia 3).
 const WEEK = {
   pon: { title: 'Dół · siła', type: 'strength', intensity: 3, minutes: 70, legs: true, warm: 'dol', cool: 'dol', items: [
-    I('skok_dal', 3, 4, 90), I('wykrok_wst', 4, 6, 150, { main: true }), I('hip_thrust', 4, 6, 150, { main: true }),
+    I('skok_dal', 3, 4, 90), I('wykrok_prz', 4, 6, 150, { main: true }), I('mostek_hantel', 4, 8, 150, { main: true }),
     I('stepup', 3, 10, 90), I('nordic', 2, 5, 120), I('wspiecia_jn', 3, 12, 60), I('unoszenie_kolan', 3, 12, 60), I('deadbug', 3, 10, 45) ] },
   wt: { title: 'Góra · siła', type: 'strength', intensity: 3, minutes: 90, cond: '4x4', warm: 'gora', cool: 'gora', items: [
     I('bench', 4, 5, 180, { main: true }), I('pullup_w', 4, 5, 180, { main: true }), I('row_incl', 3, 8, 120),
     I('ohp_seated', 3, 8, 120), I('iso_bark', 3, 6, 60) ] },
   sr: { title: 'Tlen i mobilność', type: 'light', intensity: 1, minutes: 45, checklist: CHK_SR },
   czw: { title: 'Dół · objętość', type: 'strength', intensity: 2, minutes: 70, legs: true, warm: 'dol', cool: 'dol', items: [
-    I('wykroki_chodz', 3, 10, 120, { main: true }), I('wykrok_def', 3, 8, 120), I('wykrok_bok', 3, 8, 90), I('hip_thrust_jn', 3, 10, 90),
+    I('wykroki_chodz', 3, 10, 120, { main: true }), I('wykrok_miejsce', 3, 8, 120), I('wykrok_bok', 3, 8, 90), I('mostek_jn', 3, 10, 90),
     I('slizgi', 3, 10, 90), I('reverse_nordic', 2, 6, 90), I('copenhagen', 3, 20, 60), I('zgiecie_biodra', 2, 12, 45),
     I('wspiecia_siedz', 3, 15, 60), I('pallof', 3, 10, 45) ] },
   pt: { title: 'Góra · objętość', type: 'strength', intensity: 2, minutes: 70, warm: 'gora', cool: 'gora', items: [
@@ -169,15 +178,15 @@ const WEEK = {
 // Tygodnie 1–2: powrót, 3× całe ciało, mniej serii.
 const RETURN = {
   pon: { title: 'Całe ciało A', type: 'strength', intensity: 2, minutes: 60, warm: 'cale', cool: 'cale', items: [
-    I('bench', 3, 6, 150, { main: true }), I('wykrok_wst', 3, 8, 120, { main: true }), I('pullup', 3, 6, 120), I('hip_thrust', 3, 8, 120),
+    I('bench', 3, 6, 150, { main: true }), I('wykrok_prz', 3, 8, 120, { main: true }), I('pullup', 3, 6, 120), I('mostek_hantel', 3, 10, 120),
     I('row_incl', 2, 10, 90), I('deadbug', 2, 10, 45) ] },
   wt: { title: 'Tlen i mobilność', type: 'light', intensity: 1, minutes: 40, checklist: CHK_SR },
   sr: { title: 'Całe ciało B', type: 'strength', intensity: 2, minutes: 60, warm: 'cale', cool: 'cale', items: [
     I('incline_db', 3, 10, 120, { main: true }), I('wykroki_chodz', 3, 10, 120), I('aus_row', 3, 10, 90), I('stepup', 2, 10, 90),
     I('ohp_seated', 2, 10, 90), I('pallof', 2, 10, 45), I('suitcase', 2, 30, 90) ] },
-  czw: { title: 'Spokojne interwały', type: 'cond', intensity: 1, minutes: 30, warm: 'kond', cool: 'kond', checklist: [{ id: 'jezyk', label: 'Jeżyk 5–10 min', how: CHK_SR[5].how }], condChoice: ['3x3'] },
+  czw: { title: 'Spokojne interwały', type: 'cond', intensity: 1, minutes: 30, warm: 'kond', cool: 'kond', checklist: [{ id: 'jezyk', label: 'Jeżyk 5–10 min', how: CHK_SR[5].how }, { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' }], condChoice: ['3x3'] },
   pt: { title: 'Całe ciało C', type: 'strength', intensity: 2, minutes: 60, warm: 'cale', cool: 'cale', items: [
-    I('dips', 3, 8, 120), I('wykrok_def', 3, 8, 120), I('pullup', 3, 6, 120), I('hip_thrust_jn', 2, 10, 90),
+    I('dips', 3, 8, 120), I('wykrok_miejsce', 3, 8, 120), I('pullup', 3, 6, 120), I('mostek_jn', 2, 10, 90),
     I('nordic', 2, 3, 120), I('face_pull', 2, 15, 45), I('copenhagen', 2, 15, 60) ] },
   sob: { title: 'Dłuższy tlen', type: 'light', intensity: 1, minutes: 45, checklist: [{ id: 'tlen', label: 'Marsz pod górę albo rower', minutes: [40, 45, 50] }, ...CHK_SR.slice(5)] },
   ndz: WEEK.ndz,
@@ -188,7 +197,7 @@ export const DAY_SHORT = { pon: 'PON', wt: 'WT', sr: 'ŚR', czw: 'CZW', pt: 'PT'
 export const DAY_LONG = { pon: 'Poniedziałek', wt: 'Wtorek', sr: 'Środa', czw: 'Czwartek', pt: 'Piątek', sob: 'Sobota', ndz: 'Niedziela' };
 
 export function phaseFor(week) {
-  if (week <= 2) return { id: 'powrot', name: 'Powrót', note: 'Lżej, 3–4 powt. w zapasie.' };
+  if (week <= 2) return { id: 'powrot', name: 'Powrót', note: 'Lekko: 3–4 powt. w zapasie, ciężar nie rośnie.' };
   if (week <= 5) return { id: 'fundament', name: 'Fundament', note: '' };
   if (week === 6 || week === 11) return { id: 'deload', name: 'Deload', note: 'Mniej serii, spokojna kondycja.' };
   if (week <= 10) return { id: 'sila', name: 'Siła', note: 'Mniej powtórzeń w głównych.' };
@@ -248,7 +257,7 @@ export function alternatives(exId) {
   return Object.keys(EX).filter(k => k !== exId && EX[k].p === p);
 }
 
-export const MAIN_LIFTS = ['bench', 'pullup_w', 'hip_thrust', 'wykrok_wst', 'incline_db', 'wykroki_chodz', 'suitcase'];
+export const MAIN_LIFTS = ['bench', 'pullup_w', 'mostek_hantel', 'wykrok_prz', 'hip_thrust', 'wykrok_wst', 'incline_db', 'wykroki_chodz', 'suitcase'];
 
 // Serie rozgrzewkowe przed pierwszą serią roboczą głównego ćwiczenia.
 const BARBELL = ['bench', 'hip_thrust'];

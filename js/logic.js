@@ -49,11 +49,13 @@ export function lastSetsFor(exId, sessions) {
 }
 
 // Cel na dziś: wylicza się z ostatniego razu i z tego, jak było (Łatwo / W sam raz / Ciężko).
-export function targetFor(item, sessions) {
+// Tygodnie 1–2 (powrót): lekko. Ciężar nie rośnie, a pierwszy raz startujesz od 80% wagi startowej.
+export function targetFor(item, sessions, week = 99) {
   const ex = EX[item.ex];
+  const light = week <= 2;
   const last = lastSetsFor(item.ex, sessions);
   if (!last) {
-    if (ex.unit === 'kg') return { kg: ex.start ?? null, reps: item.reps, reason: 'first', first: true };
+    if (ex.unit === 'kg') return { kg: ex.start == null ? null : light ? round2(ex.start * 0.8, ex.inc || 2.5) : ex.start, reps: item.reps, reason: 'first', first: true };
     return { kg: null, reps: item.reps, reason: 'first', first: true };
   }
   const sets = last.sets;
@@ -63,7 +65,7 @@ export function targetFor(item, sessions) {
   const manyLow = sets.filter(s => s.reps < wanted - 1).length >= 2;
   if (ex.unit === 'kg') {
     const kg = lastSet.kg;
-    if (allGood) return { kg: round(kg + (ex.inc || 2.5)), reps: item.reps, reason: 'up', prevKg: kg };
+    if (allGood && !light) return { kg: round(kg + (ex.inc || 2.5)), reps: item.reps, reason: 'up', prevKg: kg };
     if (manyLow) return { kg: Math.max(0, round(kg - (ex.inc || 2.5))), reps: item.reps, reason: 'down', prevKg: kg };
     return { kg, reps: item.reps, reason: 'hold', prevKg: kg };
   }
@@ -73,6 +75,7 @@ export function targetFor(item, sessions) {
   return { kg: null, reps: Math.max(item.reps, wanted), reason: 'hold' };
 }
 const round = n => Math.round(n * 4) / 4;
+const round2 = (n, inc) => Math.round(n / inc) * inc;
 
 export function bestSet(exId, sessions) {
   const unit = EX[exId]?.unit;

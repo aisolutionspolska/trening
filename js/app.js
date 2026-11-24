@@ -12,7 +12,7 @@ const S = {
   sheet: null, toast: null, q: '', offResults: [], offState: '', tab: 'ostatnie', g: null, endPain: null,
   progTab: 'sila', dietDate: dateKey(), open: {}, dt: null, gw: 0,
 };
-const APP_VERSION = '3';
+const APP_VERSION = '4';
 const MEALS = [['sniadanie', 'Śniadanie'], ['obiad', 'Obiad'], ['kolacja', 'Kolacja'], ['przekaski', 'Przekąski']];
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -188,7 +188,7 @@ screens.tydzien = () => {
     const wRow = pl.warm ? `<div class="grow"><span>Rozgrzewka</span>${squares(pl.warm.length, drillsDone(pl.warm, act ? act.warm : ses?.warm))}</div>` : '';
     const cRow = pl.cool ? `<div class="grow"><span>Rozciąganie</span>${squares(pl.cool.length, drillsDone(pl.cool, act ? act.cool : ses?.cool))}</div>` : '';
     if (pl.items) {
-      grid = pl.items.map((it, i) => { const ex = EX[it.ex]; const t = targetFor(it, S.sessions);
+      grid = pl.items.map((it, i) => { const ex = EX[it.ex]; const t = targetFor(it, S.sessions, w);
         return `<div class="grow"><span>${esc(ex.name)}<small>${it.sets} × ${t.reps}${unitTxt(ex)}${ex.unit === 'kg' && t.kg != null ? ` · ${fmtKg(t.kg)} kg` : ''}</small></span>${squares(it.sets, setsDoneFor(ses, act, it, i))}</div>`; }).join('');
       if (pl.cond) { const v = COND_VARIANTS[pl.cond]; const r = (act?.cond?.doneRounds) ?? ses?.cond?.rounds ?? 0; grid += `<div class="grow"><span>${v.name}</span>${squares(v.rounds, r)}</div>`; }
     } else {
@@ -218,7 +218,7 @@ screens.podglad = () => {
   if (pl.items) {
     const ed = S.p.edit;
     const list = pl.items.map((it, i) => {
-      const ex = EX[it.ex]; const t = targetFor(it, S.sessions);
+      const ex = EX[it.ex]; const t = targetFor(it, S.sessions, w);
       const tg = `${it.sets} × ${t.reps}${unitTxt(ex)}${ex.unit === 'kg' && t.kg != null ? ` · ${fmtKg(t.kg)} kg` : ''}${t.reason === 'up' && ex.unit === 'kg' ? ` <strong>+${fmtKg(t.kg - t.prevKg)}</strong>` : ''}`;
       return ed
         ? `<div class="li" style="grid-template-columns:1fr auto;min-height:62px"><button style="background:none;border:0;padding:0;text-align:left;font-weight:600;line-height:1.2;font-size:15px" data-a="editItem" data-i="${i}">${esc(ex.name)}<small>${it.sets} × ${it.reps}${unitTxt(ex)} · przerwa ${fmtClock(it.rest)}</small></button>
@@ -378,7 +378,7 @@ screens.koniec = () => {
     const sets = a.done[i] || []; if (!sets.length) return; const ex = EX[it.ex];
     const before = bestSet(it.ex, S.sessions); const top = sets.reduce((b, s) => (!b || e1rm(s, ex.unit) > e1rm(b, ex.unit) ? s : b), null);
     if (before && e1rm(top, ex.unit) > before.v + 0.01) recs.push(`<div class="li"><span>${esc(ex.name)}</span><strong class="n" style="font-size:15px">${setTxt(ex, top)}</strong></div>`);
-    const nt = targetFor(it, [{ exercises: [{ ex: it.ex, sets, target: it.target }] }]);
+    const nt = targetFor(it, [{ exercises: [{ ex: it.ex, sets, target: it.target }] }], a.week);
     if (ex.unit === 'kg' && nt.kg != null && nt.reason !== 'hold') tips.push(`<div class="li" style="min-height:44px"><span>${esc(ex.name)}</span><strong class="n" style="font-size:15px">${fmtKg(nt.kg)} kg</strong></div>`);
   });
   const c = a.cond;
@@ -680,7 +680,7 @@ setInterval(tick, 250);
 // ================= TRENING: logika =================
 async function startSession(dk, w) {
   const pl = plan(w, dk);
-  const items = pl.items.map(it => ({ ...it, target: targetFor(it, S.sessions) }));
+  const items = pl.items.map(it => ({ ...it, target: targetFor(it, S.sessions, w) }));
   S.active = { id: uid(), date: tKey(), dayKey: dk, week: w, title: pl.title, type: pl.type, startedAt: Date.now(), items, idx: 0, done: {}, condPlan: pl.cond || null, ...drillState(pl) };
   if (S.days[tKey()]?.off) { S.days[tKey()].off = false; saveDay(tKey()); }
   await saveActive(); keepScreen(true);
@@ -989,7 +989,7 @@ async function addExercise(id) {
   const ex = EX[id]; const ctx = S.sheet?.ctx;
   const item = { ex: id, sets: 3, reps: ex.unit === 's' ? 30 : ex.repsLabel === 'm' ? 30 : 10, rest: 90 };
   if (ctx === 'active') {
-    const a = S.active; a.items.push({ ...item, idx: a.items.length, target: targetFor(item, S.sessions) });
+    const a = S.active; a.items.push({ ...item, idx: a.items.length, target: targetFor(item, S.sessions, a.week) });
     a.idx = a.items.length - 1; S.sheet = null; await saveActive(); go('seria', {}, true);
   } else {
     S.sheet = null; await editPlan(items => items.push(item));
