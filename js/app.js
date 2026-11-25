@@ -13,7 +13,7 @@ const S = {
   sheet: null, toast: null, q: '', offResults: [], offState: '', tab: 'ostatnie', g: null, endPain: null,
   progTab: 'sila', dietDate: dateKey(), open: {}, dt: null, gw: 0,
 };
-const APP_VERSION = '5';
+const APP_VERSION = '6';
 const MEALS = [['sniadanie', 'Śniadanie'], ['obiad', 'Obiad'], ['kolacja', 'Kolacja'], ['przekaski', 'Przekąski']];
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -241,7 +241,7 @@ screens.podglad = () => {
     const mins = c.minutes ? `<span class="chips" style="margin-left:auto">${c.minutes.map(m => `<button class="sb sm" style="${v === m ? 'background:var(--inv-bg);color:var(--inv-ink);border-color:var(--inv-bg)' : ''}" data-a="chkMin" data-id="${c.id}" data-m="${m}">${m}′</button>`).join('')}</span>` : '';
     const open = S.open[c.id];
     return `<div class="dr"><button class="cb" data-a="chk" data-id="${c.id}" aria-label="${esc(c.label)}" aria-pressed="${!!v}"><span class="box ${v ? 'on' : ''}">${v ? ic('check', 16, 2.6) : ''}</span></button>
-      ${c.how ? `<button class="drn" data-a="how" data-id="${c.id}" aria-expanded="${!!open}">${nb(c.label)}${ic(open ? 'up' : 'down', 14, 2)}</button>` : `<span class="drn">${nb(c.label)}</span>`}${mins}</div>
+      ${c.how ? `<button class="drn" data-a="how" data-id="${c.id}" aria-expanded="${!!open}">${nb(c.label)}${c.dose ? ` <small class="mut">${nb(c.dose)}</small>` : ''}${ic(open ? 'up' : 'down', 14, 2)}</button>` : `<span class="drn">${nb(c.label)}${c.dose ? ` <small class="mut">${nb(c.dose)}</small>` : ''}</span>`}${mins}</div>
       ${open ? `<div class="how">${nb(c.how)}</div>` : ''}`;
   }).join('');
   const cv = S.p.cv || pl.condChoice?.[0];

@@ -116,32 +116,45 @@ export const COOL = {
   kond:  ['rower_luz', 'udo_przod', 'zginacz', 'dwojki', 'lydka', 'oddech'],
 };
 
-// Lekkie dni = lista do odhaczenia.
+// Lekkie dni = kroki po kolei (na zegarku z minutnikiem). t = sekundy minutnika, cardio = pokazuje tętno 125–140.
+const HOW_JEZYK = 'Stanie na jednej nodze na jeżyku. 30–45 s na nogę, potem z zamkniętymi oczami albo sięganie drugą nogą w 3 kierunkach.';
+const HOW_BIEZNIA = 'Tętno 125–140. Start: 6 km/h, nachylenie 8. Za nisko: nachylenie do 10, potem prędkość do 6,5. Za wysoko: zmniejsz nachylenie. Nie trzymaj się poręczy.';
+const HOW_ROWER = 'Opór taki, żeby tętno było 125–140. Czujesz wysiłek, ale możesz mówić pełnymi zdaniami.';
+const CZWORKI = { id: 'czworki', label: 'Czwórki i biodra', dose: '5 min', t: 300, how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' };
+const MOB_TAIL = [
+  { id: 'jezyk', label: 'Jeżyk', dose: '5–10 min', t: 300, how: HOW_JEZYK },
+  CZWORKI,
+  { id: 'zginacz', label: 'Zginacz biodra w półklęku', dose: '2 × 40 s na stronę', t: 40, how: DRILLS.zginacz.how },
+  { id: 'couch', label: 'Couch stretch', dose: '2 × 40 s na stronę', t: 40, how: 'Kolano przy ścianie (albo ławce), stopa w górę po ścianie, druga noga z przodu w wykroku. Napnij pośladek, tułów prosto.' },
+  { id: 'ksiazka', label: 'Otwieranie książki', dose: '8 na stronę', how: DRILLS.ksiazka.how },
+  { id: 'roller', label: 'Roller: odcinek piersiowy', dose: '1 min', t: 60, how: DRILLS.roller_pl.how },
+  { id: 'oddech', label: 'Oddychanie 90/90', dose: '5 długich oddechów', how: DRILLS.oddech.how },
+];
 const CHK_SR = [
-  { id: 'tlen', label: 'Marsz pod górę albo rower', minutes: [30, 35, 40], how: 'Tempo, przy którym możesz rozmawiać pełnymi zdaniami, ale czujesz wysiłek. Na bieżni pod górę, bez biegania.' },
-  { id: 'ytw', label: 'Y-T-W na skosie', how: 'Leżysz brzuchem na ławce skośnej, lekkie hantle albo bez. Ręce w kształt Y, potem T, potem W, po 8 powtórzeń. Łopatki w dół i do siebie.' },
-  { id: 'facepull', label: 'Face pull z gumą', how: 'Guma zaczepiona na wysokości twarzy. Ciągniesz do czoła, łokcie wysoko, na końcu obracasz dłonie do tyłu. 2–3 × 15.' },
-  { id: 'chintuck', label: 'Chin tuck / izometria szyi', how: 'Cofasz brodę prosto do tyłu (podwójny podbródek), 5 s, 10 razy. Potem dłoń przy czole, z tyłu i z boków głowy, pchasz głową w dłoń 10 s.' },
-  { id: 'wis', label: 'Wis na drążku', how: 'Luźny zwis, 3 × 20–40 s. Rozciąga najszersze i odciąża kręgosłup.' },
-  { id: 'jezyk', label: 'Jeżyk 5–10 min', how: 'Stanie na jednej nodze na jeżyku. 30–45 s na nogę, potem z zamkniętymi oczami albo sięganie drugą nogą w 3 kierunkach.' },
-  { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' },
-  { id: 'zginacz', label: 'Zginacz biodra w półklęku', how: DRILLS.zginacz.how },
-  { id: 'couch', label: 'Couch stretch', how: 'Kolano przy ścianie (albo ławce), stopa w górę po ścianie, druga noga z przodu w wykroku. Napnij pośladek, tułów prosto. 2 × 40 s na stronę.' },
-  { id: 'ksiazka', label: 'Otwieranie książki', how: DRILLS.ksiazka.how },
-  { id: 'roller', label: 'Roller: odcinek piersiowy', how: DRILLS.roller_pl.how },
-  { id: 'oddech', label: 'Oddychanie 90/90', how: DRILLS.oddech.how },
+  { id: 'bieznia', label: 'Bieżnia pod górę', dose: '25 min · 6 km/h · nachylenie 8–10', t: 1500, cardio: true, how: HOW_BIEZNIA },
+  { id: 'rower_tlen', label: 'Rower, spokojnie', dose: '15 min', t: 900, cardio: true, how: HOW_ROWER },
+  { id: 'ytw', label: 'Y-T-W na skosie', dose: '8 × Y, T i W', how: 'Leżysz brzuchem na ławce skośnej, lekkie hantle albo bez. Ręce w kształt Y, potem T, potem W. Łopatki w dół i do siebie.' },
+  { id: 'facepull', label: 'Face pull z gumą', dose: '2–3 × 15', how: 'Guma zaczepiona na wysokości twarzy. Ciągniesz do czoła, łokcie wysoko, na końcu obracasz dłonie do tyłu.' },
+  { id: 'chintuck', label: 'Chin tuck / izometria szyi', dose: '10 × 5 s + 4 × 10 s', how: 'Cofasz brodę prosto do tyłu (podwójny podbródek), 5 s, 10 razy. Potem dłoń przy czole, z tyłu i z boków głowy, pchasz głową w dłoń 10 s.' },
+  { id: 'wis', label: 'Wis na drążku', dose: '3 × 20–40 s', t: 30, how: 'Luźny zwis. Rozciąga najszersze i odciąża kręgosłup.' },
+  ...MOB_TAIL,
+];
+const CHK_LONG = [
+  { id: 'bieznia', label: 'Bieżnia pod górę', dose: '30 min · 6 km/h · nachylenie 8–10', t: 1800, cardio: true, how: HOW_BIEZNIA },
+  { id: 'rower_tlen', label: 'Rower, spokojnie', dose: '15 min', t: 900, cardio: true, how: HOW_ROWER },
+  ...MOB_TAIL,
 ];
 const CHK_NDZ = [
-  { id: 'spacer', label: 'Spacer', minutes: [20, 30, 45, 60] },
-  { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' },
-  { id: 'mobilnosc', label: 'Mobilność 20 min', how: 'Przód uda leżąc na boku, zginacz biodra, tył uda z gumą, żaba, „4” leżąc, łydka przy ścianie, klatka w ramie stojaka, oddychanie 90/90. Po 2 × 40 s.' },
-  { id: 'pistolet', label: 'Pistolet do masażu', how: 'Uda, pośladki, łydki, przywodziciele, klatka. Po 30–60 s na partię.' },
+  { id: 'spacer', label: 'Spacer', dose: '20–60 min', t: 1200, minutes: [20, 30, 45, 60] },
+  CZWORKI,
+  { id: 'mobilnosc', label: 'Mobilność', dose: '20 min', t: 1200, how: 'Przód uda leżąc na boku, zginacz biodra, tył uda z gumą, żaba, „4” leżąc, łydka przy ścianie, klatka w ramie stojaka, oddychanie 90/90. Po 2 × 40 s.' },
+  { id: 'pistolet', label: 'Pistolet do masażu', dose: '30–60 s na partię', how: 'Uda, pośladki, łydki, przywodziciele, klatka.' },
   { id: 'sauna', label: 'Sauna' },
 ];
 const CHK_SOB = [
-  { id: 'skakanka', label: 'Skakanka albo pogo (start)', how: 'Rozgrzewka stóp i łydek przed interwałami: 3 × 30 s skakanki albo niskich odbić w miejscu. Tylko tam, gdzie nie ma sufitu nad głową.' },
-  { id: 'jezyk', label: 'Jeżyk 5 min', how: CHK_SR[5].how },
-  { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' },
+  { id: 'skakanka', label: 'Skakanka albo pogo (start)', dose: '3 × 30 s', t: 30, how: 'Rozgrzewka stóp i łydek przed interwałami: skakanka albo niskie odbicia w miejscu. Tylko tam, gdzie nie ma sufitu nad głową.' },
+  { id: 'jezyk', label: 'Jeżyk', dose: '5 min', t: 300, how: HOW_JEZYK },
+  CZWORKI,
   { id: 'sauna', label: 'Sauna' },
 ];
 
@@ -184,11 +197,11 @@ const RETURN = {
   sr: { title: 'Całe ciało B', type: 'strength', intensity: 2, minutes: 60, warm: 'cale', cool: 'cale', items: [
     I('incline_db', 3, 10, 120, { main: true }), I('wykroki_chodz', 3, 10, 120), I('aus_row', 3, 10, 90), I('stepup', 2, 10, 90),
     I('ohp_seated', 2, 10, 90), I('pallof', 2, 10, 45), I('suitcase', 2, 30, 90) ] },
-  czw: { title: 'Spokojne interwały', type: 'cond', intensity: 1, minutes: 30, warm: 'kond', cool: 'kond', checklist: [{ id: 'jezyk', label: 'Jeżyk 5–10 min', how: CHK_SR[5].how }, { id: 'czworki', label: 'Czwórki i biodra, 5 min', how: 'Pistolet na przód uda 1 min na nogę, przód uda leżąc na boku 2 × 40 s, zginacz biodra w półklęku 2 × 40 s. Możesz to robić codziennie, też w przerwie od pracy.' }], condChoice: ['3x3'] },
+  czw: { title: 'Spokojne interwały', type: 'cond', intensity: 1, minutes: 30, warm: 'kond', cool: 'kond', checklist: [MOB_TAIL[0], CZWORKI], condChoice: ['3x3'] },
   pt: { title: 'Całe ciało C', type: 'strength', intensity: 2, minutes: 60, warm: 'cale', cool: 'cale', items: [
     I('dips', 3, 8, 120), I('wykrok_miejsce', 3, 8, 120), I('pullup', 3, 6, 120), I('mostek_jn', 2, 10, 90),
     I('nordic', 2, 3, 120), I('face_pull', 2, 15, 45), I('copenhagen', 2, 15, 60) ] },
-  sob: { title: 'Dłuższy tlen', type: 'light', intensity: 1, minutes: 45, checklist: [{ id: 'tlen', label: 'Marsz pod górę albo rower', minutes: [40, 45, 50] }, ...CHK_SR.slice(5)] },
+  sob: { title: 'Dłuższy tlen', type: 'light', intensity: 1, minutes: 45, checklist: CHK_LONG },
   ndz: WEEK.ndz,
 };
 
@@ -240,7 +253,7 @@ export function dayPlan(week, dayKey, cfg = {}) {
   }
   if (ph.id === 'deload') {
     if (d.cond) delete d.cond;
-    if (d.type === 'cond') { d.warm = null; d.cool = null; d.type = 'light'; d.title = 'Spokojny tlen'; d.checklist = [{ id: 'tlen', label: 'Spokojny rower albo marsz', minutes: [30, 40] }, ...(d.checklist || [])]; delete d.condChoice; }
+    if (d.type === 'cond') { d.warm = null; d.cool = null; d.type = 'light'; d.title = 'Spokojny tlen'; d.checklist = [{ id: 'tlen', label: 'Spokojny rower albo marsz', dose: '30–40 min', t: 1800, cardio: true, minutes: [30, 40], how: HOW_ROWER }, ...(d.checklist || [])]; delete d.condChoice; }
   }
   if (ph.id === 'fundament' && week === 3 && d.cond === '4x4') d.cond = '3x3';
   return d;
